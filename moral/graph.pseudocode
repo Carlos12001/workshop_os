@@ -1,0 +1,82 @@
+/**
+ * Represents a node in a dependency graph, which may include processes or resources.
+ */
+struct Node {
+    int id;                 // Unique identifier for the node
+    bool visited;           // Flag to check if the node has been visited
+    bool inStack;           // Flag to check if the node is currently in recursion stack
+    List *adjacents;        // Adjacency list for holding references to adjacent nodes
+};
+
+/**
+ * Linked list structure to hold adjacent nodes.
+ */
+struct List {
+    Node *node;            // Reference to the adjacent node
+    List *next;            // Pointer to the next element in the adjacency list
+};
+
+/**
+ * Adds a directed edge from the source node to the destination node.
+ * @param source Pointer to the source node
+ * @param destination Pointer to the destination node
+ */
+function addEdge(Node *source, Node *destination) {
+    List *newAdjacent = new List;
+    newAdjacent->node = destination;
+    newAdjacent->next = source->adjacents;
+    source->adjacents = newAdjacent;
+}
+
+/**
+ * Recursively searches for a cycle starting from the given node.
+ * Utilizes depth-first search (DFS) technique to detect cycles.
+ * @param node Pointer to the node from where the cycle search starts
+ * @param deadlock Pointer to a boolean flag indicating the presence of a deadlock
+ */
+function searchForCycle(Node *node, bool *deadlock) {
+    node->visited = true;
+    node->inStack = true;
+
+    List *adjacent = node->adjacents;
+    while (adjacent != NULL) {
+        if (!adjacent->node->visited) {
+            searchForCycle(adjacent->node, deadlock);
+            if (*deadlock) {
+                return;
+            }
+        } else if (adjacent->node->inStack) {
+            *deadlock = true;
+            return;
+        }
+        adjacent = adjacent->next;
+    }
+    node->inStack = false;
+}
+
+/**
+ * Initiates the deadlock detection across the entire graph.
+ * Iterates through all nodes in the graph to ensure comprehensive coverage.
+ * @param graph Array of pointers to all nodes in the graph
+ * @param count Total number of nodes in the graph
+ */
+function detectDeadlock(Node *graph[], int count) {
+    bool deadlock = false;
+    for (int i = 0; i < count; i++) {
+        graph[i]->visited = false;
+        graph[i]->inStack = false;
+    }
+
+    for (int i = 0; i < count && !deadlock; i++) {
+        if (!graph[i]->visited) {
+            searchForCycle(graph[i], &deadlock);
+        }
+    }
+
+    if (deadlock) {
+        print("Deadlock detected in the system.");
+    } else {
+        print("No deadlock detected.");
+    }
+}
+
